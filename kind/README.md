@@ -4,6 +4,10 @@ One control plane and two workers, each a container sharing your machine's kerne
 
 Verified on: Arch/CachyOS, kernel 7.2, rootful Podman 6.1, kind 0.33.0, Cilium 1.21.0-pre.2.
 
+![Three node containers on the podman1 bridge sharing the host kernel; kubectl reaches the API server, DNS crosses ufw INPUT, image pulls cross ufw FORWARD, Cilium agents load eBPF into the shared kernel](img/topology.svg)
+
+Everything inside the grey box is one machine. The three "nodes" are containers on a Podman bridge, and — this is the part that drives every requirement below — they all run on your host's kernel. Cilium's agents load eBPF programs into that kernel, so the containers must be rootful, the kernel version matters, and traffic leaving the containers crosses your host firewall.
+
 ### Prerequisites
 ```
 sudo pacman -S kind kubectl cilium-cli
@@ -32,6 +36,8 @@ kubectl get nodes
 All three nodes are `NotReady` and CoreDNS is `Pending` — there is no CNI yet. This is the same state as the VM right after `kubeadm init`.
 
 ### 3. Install Cilium
+![Install timeline: kind create leaves nodes NotReady; Gateway API CRDs; cilium install makes nodes Ready; cilium status --wait ends with Cilium OK. Each failure from the troubleshooting table is pinned to its stage.](img/install-flow.svg)
+
 Gateway API CRDs first (Cilium's Gateway controller needs them at startup), then Cilium itself — either with the `cilium` CLI or with Helm. Both produce the same Helm release; pick one.
 ```
 kubectl apply -f https://github.com/kubernetes-sigs/gateway-api/releases/download/v1.6.1/standard-install.yaml

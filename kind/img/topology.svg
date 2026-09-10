@@ -1,0 +1,116 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 960 600" role="img" aria-label="Three kind node containers on the podman1 bridge share the host kernel; kubectl reaches the API server on the control-plane node; DNS goes to the bridge gateway through ufw INPUT and image pulls go to the internet through ufw FORWARD; Cilium agents program eBPF in the shared kernel and encrypt node-to-node traffic with WireGuard." font-family="ui-sans-serif, system-ui, -apple-system, Segoe UI, Helvetica, Arial, sans-serif" font-size="12">
+  <defs>
+    <marker id="arrow" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="8" markerHeight="8" orient="auto-start-reverse">
+      <path d="M 0 0 L 10 5 L 0 10 z" fill="#57606a"/>
+    </marker>
+  </defs>
+
+  <!-- canvas -->
+  <rect x="0" y="0" width="960" height="600" fill="#ffffff"/>
+
+  <!-- host -->
+  <rect x="20" y="20" width="920" height="560" rx="8" fill="#f6f8fa" stroke="#8c959f"/>
+  <text x="36" y="42" font-weight="600" fill="#24292f">Your machine (rootful Podman)</text>
+
+  <!-- kubectl / cilium CLI -->
+  <rect x="36" y="64" width="150" height="46" rx="6" fill="#ffffff" stroke="#57606a"/>
+  <text x="111" y="83" text-anchor="middle" fill="#24292f">kubectl · cilium · hubble</text>
+  <text x="111" y="99" text-anchor="middle" fill="#57606a">run as your user</text>
+
+  <!-- internet -->
+  <rect x="774" y="64" width="150" height="46" rx="6" fill="#ffffff" stroke="#57606a"/>
+  <text x="849" y="83" text-anchor="middle" fill="#24292f">Internet</text>
+  <text x="849" y="99" text-anchor="middle" fill="#57606a">quay.io · ghcr.io · docker.io</text>
+
+  <!-- ufw -->
+  <rect x="380" y="64" width="200" height="46" rx="6" fill="#fff8c5" stroke="#9a6700"/>
+  <text x="480" y="83" text-anchor="middle" font-weight="600" fill="#24292f">ufw (default deny)</text>
+  <text x="480" y="99" text-anchor="middle" fill="#57606a">INPUT drop · FORWARD drop</text>
+
+  <!-- bridge -->
+  <rect x="36" y="150" width="888" height="40" rx="6" fill="#ddf4ff" stroke="#0969da"/>
+  <text x="480" y="168" text-anchor="middle" font-weight="600" fill="#24292f">podman1 bridge — gateway 10.89.0.1</text>
+  <text x="480" y="183" text-anchor="middle" fill="#57606a">aardvark-dns on 10.89.0.1:53 resolves container names</text>
+
+  <!-- nodes -->
+  <g>
+    <rect x="36" y="230" width="280" height="250" rx="6" fill="#ffffff" stroke="#57606a"/>
+    <text x="176" y="250" text-anchor="middle" font-weight="600" fill="#24292f">cilium-lab-control-plane</text>
+    <text x="176" y="265" text-anchor="middle" fill="#57606a">container · 10.89.0.6</text>
+    <rect x="52" y="278" width="248" height="36" rx="4" fill="#f6f8fa" stroke="#8c959f"/>
+    <text x="176" y="293" text-anchor="middle" fill="#24292f">kube-apiserver :6443 · etcd</text>
+    <text x="176" y="307" text-anchor="middle" fill="#57606a">scheduler · controller-manager</text>
+    <rect x="52" y="324" width="248" height="30" rx="4" fill="#f6f8fa" stroke="#8c959f"/>
+    <text x="176" y="343" text-anchor="middle" fill="#24292f">kubelet · containerd</text>
+    <rect x="52" y="364" width="248" height="52" rx="4" fill="#dafbe1" stroke="#1a7f37"/>
+    <text x="176" y="383" text-anchor="middle" font-weight="600" fill="#24292f">cilium agent + envoy</text>
+    <text x="176" y="399" text-anchor="middle" fill="#57606a">CNI · Services in eBPF · L7 · Hubble</text>
+    <rect x="52" y="426" width="248" height="40" rx="4" fill="#f6f8fa" stroke="#8c959f"/>
+    <text x="176" y="443" text-anchor="middle" fill="#24292f">pods</text>
+    <text x="176" y="458" text-anchor="middle" fill="#57606a">10.244.0.0/24 (NoSchedule taint)</text>
+  </g>
+  <g>
+    <rect x="340" y="230" width="280" height="250" rx="6" fill="#ffffff" stroke="#57606a"/>
+    <text x="480" y="250" text-anchor="middle" font-weight="600" fill="#24292f">cilium-lab-worker</text>
+    <text x="480" y="265" text-anchor="middle" fill="#57606a">container · 10.89.0.7</text>
+    <rect x="356" y="324" width="248" height="30" rx="4" fill="#f6f8fa" stroke="#8c959f"/>
+    <text x="480" y="343" text-anchor="middle" fill="#24292f">kubelet · containerd</text>
+    <rect x="356" y="364" width="248" height="52" rx="4" fill="#dafbe1" stroke="#1a7f37"/>
+    <text x="480" y="383" text-anchor="middle" font-weight="600" fill="#24292f">cilium agent + envoy</text>
+    <text x="480" y="399" text-anchor="middle" fill="#57606a">CNI · Services in eBPF · L7 · Hubble</text>
+    <rect x="356" y="426" width="248" height="40" rx="4" fill="#f6f8fa" stroke="#8c959f"/>
+    <text x="480" y="443" text-anchor="middle" fill="#24292f">pods</text>
+    <text x="480" y="458" text-anchor="middle" fill="#57606a">10.244.1.0/24</text>
+  </g>
+  <g>
+    <rect x="644" y="230" width="280" height="250" rx="6" fill="#ffffff" stroke="#57606a"/>
+    <text x="784" y="250" text-anchor="middle" font-weight="600" fill="#24292f">cilium-lab-worker2</text>
+    <text x="784" y="265" text-anchor="middle" fill="#57606a">container · 10.89.0.5</text>
+    <rect x="660" y="324" width="248" height="30" rx="4" fill="#f6f8fa" stroke="#8c959f"/>
+    <text x="784" y="343" text-anchor="middle" fill="#24292f">kubelet · containerd</text>
+    <rect x="660" y="364" width="248" height="52" rx="4" fill="#dafbe1" stroke="#1a7f37"/>
+    <text x="784" y="383" text-anchor="middle" font-weight="600" fill="#24292f">cilium agent + envoy</text>
+    <text x="784" y="399" text-anchor="middle" fill="#57606a">CNI · Services in eBPF · L7 · Hubble</text>
+    <rect x="660" y="426" width="248" height="40" rx="4" fill="#f6f8fa" stroke="#8c959f"/>
+    <text x="784" y="443" text-anchor="middle" fill="#24292f">pods</text>
+    <text x="784" y="458" text-anchor="middle" fill="#57606a">10.244.2.0/24</text>
+  </g>
+
+  <!-- shared kernel -->
+  <rect x="36" y="510" width="888" height="52" rx="6" fill="#fbefff" stroke="#8250df"/>
+  <text x="480" y="531" text-anchor="middle" font-weight="600" fill="#24292f">one Linux kernel (7.2), shared by the host and all three nodes</text>
+  <text x="480" y="548" text-anchor="middle" fill="#57606a">eBPF programs · bpffs mount · WireGuard module — this is why nodes must be rootful and the host kernel version matters</text>
+
+  <!-- node -> bridge links -->
+  <line x1="176" y1="230" x2="176" y2="190" stroke="#0969da" stroke-width="1.5"/>
+  <line x1="480" y1="230" x2="480" y2="190" stroke="#0969da" stroke-width="1.5"/>
+  <line x1="784" y1="230" x2="784" y2="190" stroke="#0969da" stroke-width="1.5"/>
+
+  <!-- kubectl -> API server -->
+  <path d="M 111 110 L 111 138 L 60 138 L 60 296 L 52 296" fill="none" stroke="#57606a" stroke-width="1.5" marker-end="url(#arrow)"/>
+  <text x="66" y="134" fill="#24292f">https://10.89.0.6:6443</text>
+
+  <!-- DNS: node -> gateway (INPUT), annotated on the middle connector -->
+  <path d="M 486 226 L 486 194" fill="none" stroke="#9a6700" stroke-width="1.5" stroke-dasharray="4 3" marker-end="url(#arrow)"/>
+  <text x="494" y="207" fill="#9a6700">DNS → 10.89.0.1:53</text>
+  <text x="494" y="221" fill="#9a6700">ufw INPUT — allow in on podman1</text>
+
+  <!-- pulls: node -> internet (FORWARD) -->
+  <path d="M 910 150 L 910 128 L 849 128 L 849 110" fill="none" stroke="#9a6700" stroke-width="1.5" stroke-dasharray="4 3" marker-end="url(#arrow)"/>
+  <text x="600" y="128" fill="#9a6700">image pulls, forwarded by the host</text>
+  <text x="600" y="142" fill="#9a6700">ufw FORWARD — route allow in on podman1</text>
+
+  <!-- agents -> kernel -->
+  <line x1="176" y1="480" x2="176" y2="510" stroke="#8250df" stroke-width="1.5" marker-end="url(#arrow)"/>
+  <line x1="480" y1="480" x2="480" y2="510" stroke="#8250df" stroke-width="1.5" marker-end="url(#arrow)"/>
+  <line x1="784" y1="480" x2="784" y2="510" stroke="#8250df" stroke-width="1.5" marker-end="url(#arrow)"/>
+  <text x="186" y="499" fill="#8250df">agent loads eBPF</text>
+  <text x="490" y="499" fill="#8250df">agent loads eBPF</text>
+  <text x="794" y="499" fill="#8250df">agent loads eBPF</text>
+
+  <!-- wireguard between nodes -->
+  <path d="M 316 390 L 340 390" fill="none" stroke="#1a7f37" stroke-width="2" marker-end="url(#arrow)" marker-start="url(#arrow)"/>
+  <path d="M 620 390 L 644 390" fill="none" stroke="#1a7f37" stroke-width="2" marker-end="url(#arrow)" marker-start="url(#arrow)"/>
+  <text x="328" y="380" text-anchor="middle" fill="#1a7f37" font-size="10">WireGuard</text>
+  <text x="632" y="380" text-anchor="middle" fill="#1a7f37" font-size="10">WireGuard</text>
+</svg>
