@@ -6,7 +6,7 @@
 - Docker, or **rootful** Podman (see below)
 - kind v0.33.0 — https://kind.sigs.k8s.io/docs/user/quick-start/#installation (Arch: `sudo pacman -S kind`)
 - `kubectl`, `cilium` and `hubble` CLIs (`Module1/demo.sh` Steps 1 and 5 show how; Arch: `sudo pacman -S kubectl cilium-cli`)
-- WireGuard kernel module on the host: `sudo modprobe wireguard`
+- WireGuard kernel module on the host: `sudo modprobe wireguard`. kind nodes are containers, so they share your machine's kernel and cannot load modules themselves; the Cilium agent's `encryption.type=wireguard` needs the module already present (`lsmod | grep wireguard`). Skip this if you drop the two `encryption.*` values.
 
 #### Podman must be rootful
 Cilium mounts the BPF filesystem and loads eBPF programs into the host kernel. A rootless container is not allowed to do that, so with rootless Podman the `cilium` agent pods stay in `Init:CrashLoopBackOff` and the `mount-bpf-fs` init container logs `mount: /sys/fs/bpf: permission denied`. Run kind as root so the node containers are rootful:
