@@ -68,10 +68,17 @@ kubectl apply -f pgcluster.yaml
 ```
 
 4. **Secure with HTTPS & Gateway API**  
-   - Install `cert-manager`  
-   - Enable Gateway API in your deployments  
-   - Install and configure `kGateway`  
-   - Create `Gateway`, `CertificateIssuer`, and `HTTPRoute`
+   - Cilium is the CNI *and* the Gateway API implementation — no separate gateway controller
+   - Install `cert-manager` and enable its Gateway API support
+   - Create `Gateway`, `ClusterIssuer`, and `HTTPRoute`
+
+Cilium: on Exoscale SKS create the cluster with `--cni cilium`; on a kubeadm cluster `Module1/demo.sh` installs it. Either way Gateway API must be on:
+```
+kubectl apply -f https://github.com/kubernetes-sigs/gateway-api/releases/download/v1.6.1/standard-install.yaml
+cilium upgrade --version 1.20.1 --set gatewayAPI.enabled=true
+kubectl -n kube-system rollout restart deployment/cilium-operator
+kubectl get gatewayclass cilium
+```
 Cert Manager 
 ```
 kubectl apply -f https://github.com/cert-manager/cert-manager/releases/download/v1.21.1/cert-manager.yaml
@@ -86,15 +93,6 @@ Restart cert-manager
 ```
 kubectl rollout restart deployment cert-manager -n cert-manager
 ```
-Install kgateway 
-```
-kubectl apply -f https://github.com/kubernetes-sigs/gateway-api/releases/download/v1.6.1/standard-install.yaml
-
-helm upgrade -i --create-namespace --namespace kgateway-system --version v2.4.4 kgateway-crds oci://cr.kgateway.dev/kgateway-dev/charts/kgateway-crds
-
-helm upgrade -i --namespace kgateway-system --version v2.4.4 kgateway oci://cr.kgateway.dev/kgateway-dev/charts/kgateway
-
-```
 Apply manifests 
 
 ```
@@ -102,7 +100,9 @@ kubectl apply -f manifests/cluster-issuer.yaml
 kubectl apply -f manifests/gateway.yaml
 kubectl apply -f manifests/httproute.yaml
 kubectl apply -f manifests/httpredirect.yaml
+kubectl -n crash-course get svc cilium-gateway-crash-course-gateway
 ```
+Point the `k8s2025.kubesimplify.com` DNS record at that Service's external IP.
 5. **Monitor with kube-prometheus-stack**  
    - Get real-time metrics in **Grafana**, using a production-grade monitoring stack
 Install Kube prometheus stack
@@ -123,6 +123,7 @@ Each folder corresponds to a major topic covered in the course:
 - `auth-service`, `frontend`, `game-service`: Microservices
 - `configmaps`, `volumes`, `rbac`, `pods`: Core Kubernetes objects
 - `scheduler`: Custom scheduling demos
+- `servicemesh`: Cilium service mesh demos (L7 policy, mTLS, Gateway API, Hubble)
 - `services`, `deployments`, `manifests`: Resource definitions
 - `Module1`: Intro module to Kubernetes
 - `init.sql`: Database initialization

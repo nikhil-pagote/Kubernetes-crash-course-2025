@@ -6,7 +6,7 @@ metadata:
 spec:
   parentRefs:
   - name: crash-course-gateway
-    namespace: kgateway-system
+    namespace: crash-course
   hostnames:
   - "k8s2025.kubesimplify.com"
   rules:

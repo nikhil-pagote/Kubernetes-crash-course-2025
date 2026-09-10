@@ -13,6 +13,6 @@ spec:
           gatewayHTTPRoute:
             parentRefs:
               - name: crash-course-gateway
-                namespace: kgateway-system
+                namespace: crash-course
                 kind: Gateway
 

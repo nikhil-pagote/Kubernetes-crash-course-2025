@@ -53,7 +53,7 @@ Check the pod logs to see if the connection was successful
 
 
 ## Ingres controller
-> **Note:** the ingress-nginx project was retired and archived in March 2026 — `controller-v1.15.1` is its final release and it receives no further security fixes. It still works for this demo, but for anything real use Gateway API instead (see `manifests/` for the kgateway-based setup).
+> **Note:** the ingress-nginx project was retired and archived in March 2026 — `controller-v1.15.1` is its final release and it receives no further security fixes. It still works for this demo, but for anything real use Gateway API instead (see `manifests/` and `servicemesh/` for the Cilium-based setup).
 ```
 kubectl apply -f https://raw.githubusercontent.com/kubernetes/ingress-nginx/controller-v1.15.1/deploy/static/provider/cloud/deploy.yaml
 ```
@@ -65,8 +65,9 @@ ssh onto the node where the pod is deployed and the change the /etc/hosts file.
 
 
 
-## Nodeport check via iptables
+## Nodeport check via Cilium
+There is no kube-proxy in this cluster, so NodePorts live in Cilium's eBPF maps instead of iptables:
 ```
-sudo iptables -t nat -L -n -v | grep -e NodePort -e KUBE
-sudo iptables -t nat -L -n -v | grep 31188
+kubectl -n kube-system exec ds/cilium -- cilium-dbg service list | grep NodePort
+kubectl -n kube-system exec ds/cilium -- cilium-dbg service list | grep 31188
 ```
