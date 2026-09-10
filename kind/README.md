@@ -32,18 +32,45 @@ kubectl get nodes
 All three nodes are `NotReady` and CoreDNS is `Pending` — there is no CNI yet. This is the same state as the VM right after `kubeadm init`.
 
 ### 3. Install Cilium
+Gateway API CRDs first (Cilium's Gateway controller needs them at startup), then Cilium itself — either with the `cilium` CLI or with Helm. Both produce the same Helm release; pick one.
 ```
 kubectl apply -f https://github.com/kubernetes-sigs/gateway-api/releases/download/v1.6.1/standard-install.yaml
-
 API_SERVER_IP=$(kubectl get node cilium-lab-control-plane -o jsonpath='{.status.addresses[?(@.type=="InternalIP")].address}')
-cilium install --version 1.21.0-pre.2 -f cilium-values.yaml --set k8sServiceHost=${API_SERVER_IP}
+```
 
+**Option A — cilium CLI.** Detects kind and fills in the cluster name, operator replica count and tunnel mode by itself:
+```
+cilium install --version 1.21.0-pre.2 -f cilium-values.yaml --set k8sServiceHost=${API_SERVER_IP}
+```
+
+**Option B — Helm** (`sudo pacman -S helm`). Same chart from Cilium's OCI registry; the four values the CLI would auto-detect are passed explicitly:
+```
+helm install cilium oci://quay.io/cilium/charts/cilium --version 1.21.0-pre.2 \
+  --namespace kube-system \
+  -f cilium-values.yaml \
+  --set k8sServiceHost=${API_SERVER_IP} \
+  --set cluster.name=kind-cilium-lab \
+  --set operator.replicas=1 \
+  --set routingMode=tunnel \
+  --set tunnelProtocol=vxlan
+```
+
+Then, for either option:
+```
 cilium status --wait
 kubectl get nodes
 ```
 Takes a few minutes on first run (image pulls). Ends with `Cilium: OK`, three `Ready` nodes, and in `cilium-spire` a `2/2` server plus three `1/1` agents.
 
+Later changes go through the same tool you installed with: `cilium upgrade --version <ver> -f cilium-values.yaml --set ...` or `helm upgrade cilium oci://quay.io/cilium/charts/cilium --version <ver> -n kube-system -f cilium-values.yaml --set ...` (repeat the `--set` values; Helm does not remember them across upgrades unless you pass `--reuse-values`). `helm -n kube-system get values cilium` shows what is currently applied, whichever tool did it.
+
 Version note: `1.21.0-pre.2` is required on host kernel 7.2 or newer ([cilium/cilium#48016](https://github.com/cilium/cilium/issues/48016)). On kernel 7.1 or older use `1.20.1`, the same version as `Module1/demo.sh`.
+
+### Hubble UI
+```
+cilium hubble ui
+```
+Port-forwards the UI to http://localhost:12000 and opens it; keep the terminal open. It shows a service map per namespace built from observed flows, so generate traffic first (e.g. `servicemesh/README.md` step 1). CLI equivalent: `cilium hubble port-forward &` then `hubble observe --follow`.
 
 ### Using the cluster
 - Node names: `cilium-lab-control-plane`, `cilium-lab-worker`, `cilium-lab-worker2`. The control plane keeps its `NoSchedule` taint; workloads land on the workers.
