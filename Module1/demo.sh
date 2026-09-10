@@ -271,6 +271,11 @@ API_SERVER_IP=$(hostname -I | awk '{print $1}')
 #   authentication.*            SPIRE issues SPIFFE identities to pods; policies
 #                               with `authentication.mode: required` enforce
 #                               mutual TLS handshakes.           -> servicemesh/
+#   ...server.initContainers    workaround: spire-server runs as uid 1000 but the
+#                               kubelet creates its socket directory (a hostPath)
+#                               as root:root 0755, so the server cannot create
+#                               api.sock and silently hangs at startup. A tiny
+#                               init container chowns the directory first.
 cilium install --version 1.20.1 \
   --set kubeProxyReplacement=true \
   --set k8sServiceHost=${API_SERVER_IP} \
@@ -283,7 +288,13 @@ cilium install --version 1.20.1 \
   --set encryption.type=wireguard \
   --set authentication.enabled=true \
   --set authentication.mutual.spire.enabled=true \
-  --set authentication.mutual.spire.install.enabled=true
+  --set authentication.mutual.spire.install.enabled=true \
+  --set 'authentication.mutual.spire.install.server.initContainers[0].name=fix-socket-dir-owner' \
+  --set 'authentication.mutual.spire.install.server.initContainers[0].image=docker.io/library/busybox:1.38.0' \
+  --set 'authentication.mutual.spire.install.server.initContainers[0].command={chown,1000:1000,/tmp/spire-server/private}' \
+  --set 'authentication.mutual.spire.install.server.initContainers[0].securityContext.runAsUser=0' \
+  --set 'authentication.mutual.spire.install.server.initContainers[0].volumeMounts[0].name=spire-server-socket' \
+  --set 'authentication.mutual.spire.install.server.initContainers[0].volumeMounts[0].mountPath=/tmp/spire-server/private'
 
 # kubeadm taints control-plane nodes NoSchedule so ordinary workloads stay off
 # them. On a single-node lab cluster that would leave nothing to run on.

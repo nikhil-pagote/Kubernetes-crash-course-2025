@@ -18,9 +18,10 @@ Cilium mounts the BPF filesystem and loads eBPF programs into the host kernel. A
    ```
 2. If a host firewall is active (`sudo ufw status`), allow traffic arriving on that bridge. Without this the worker nodes cannot resolve the control plane's name — Podman's DNS (aardvark-dns) listens on the bridge gateway, and the firewall silently drops the queries, so `kind create cluster` fails at "Joining worker nodes" with `lookup cilium-lab-control-plane ... i/o timeout`:
    ```
-   sudo ufw allow in on podman1
+   sudo ufw allow in on podman1          # containers -> host (DNS)
+   sudo ufw route allow in on podman1    # containers -> internet (image pulls)
    ```
-   The rule only accepts packets from your own containers on that bridge; it opens nothing to the LAN. Remove it later with `sudo ufw delete allow in on podman1`.
+   The first rule lets containers reach services on the host (ufw's INPUT chain); the second lets their traffic be forwarded out to the internet (FORWARD chain, which ufw also drops by default — without it every image pull fails with `ErrImagePull`/`DeadlineExceeded`). Neither opens anything to the LAN. Remove them later with `sudo ufw delete allow in on podman1` and `sudo ufw delete route allow in on podman1`.
 3. Create the cluster as root, but keep the credentials in your own kubeconfig:
    ```
    sudo KIND_EXPERIMENTAL_PROVIDER=podman kind create cluster --config kind-config.yaml --kubeconfig ~/.kube/config
@@ -38,29 +39,20 @@ kubectl get nodes
 All three nodes are `NotReady`: the config disables kind's default CNI and kube-proxy, so — exactly like the VM after `kubeadm init` — there is no pod network yet.
 
 ### Install Cilium
-Same values as `Module1/demo.sh`. The only difference is how we find the API server address: on kind it is the control-plane container's IP.
+Same settings as `Module1/demo.sh`, kept in `cilium-values.yaml` (plus one fix, explained in that file). The only per-cluster value is the API server address — on kind it is the control-plane container's IP.
 ```
 kubectl apply -f https://github.com/kubernetes-sigs/gateway-api/releases/download/v1.6.1/standard-install.yaml
 
 API_SERVER_IP=$(kubectl get node cilium-lab-control-plane -o jsonpath='{.status.addresses[?(@.type=="InternalIP")].address}')
-cilium install --version 1.20.1 \
-  --set kubeProxyReplacement=true \
-  --set k8sServiceHost=${API_SERVER_IP} \
-  --set k8sServicePort=6443 \
-  --set ipam.mode=kubernetes \
-  --set hubble.relay.enabled=true \
-  --set hubble.ui.enabled=true \
-  --set gatewayAPI.enabled=true \
-  --set encryption.enabled=true \
-  --set encryption.type=wireguard \
-  --set authentication.enabled=true \
-  --set authentication.mutual.spire.enabled=true \
-  --set authentication.mutual.spire.install.enabled=true
+cilium install --version 1.20.1 -f cilium-values.yaml --set k8sServiceHost=${API_SERVER_IP}
 
 cilium status --wait
 kubectl get nodes
 ```
 Nodes turn `Ready` as soon as the Cilium agent runs on them. No taint removal is needed here: the control plane keeps its `NoSchedule` taint and workloads land on the two workers.
+
+#### Host kernel 7.2 or newer: use Cilium 1.21.0-pre.2
+kind nodes share your kernel, and kernel 7.2 (August 2026) rejects the feature probe every released Cilium runs at startup ([cilium/cilium#48016](https://github.com/cilium/cilium/issues/48016)). The agents crash-loop with `failed to probe helper ... bpf_set_retval ... R1 is not a scalar`. The fix is in `1.21.0-pre.2` and will be in 1.20.2 once released. Check with `uname -r`; if you are on 7.2+, use `--version 1.21.0-pre.2` in the command above (or `cilium upgrade --version 1.21.0-pre.2` on an existing install).
 
 ### What is different from the VM
 - `kubectl get nodes -o wide` shows three nodes with different IPs; `scheduler/` demos (nodeSelector, affinity, topology spread, taints) now have real nodes to work with. Node names are `cilium-lab-control-plane`, `cilium-lab-worker`, `cilium-lab-worker2`.
