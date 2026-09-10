@@ -1,35 +1,40 @@
-## Kube-Proxy
+## Kube-Proxy (replaced by Cilium)
 
-> **Note:** kube-proxy still defaults to `iptables` mode in Kubernetes 1.37 (it logs a warning when the mode isn't set explicitly). `nftables` mode becomes the default in 1.40, at which point these `iptables` commands would need to be replaced with `nft list ruleset`. Check the mode in use with `kubectl -n kube-system get cm kube-proxy -o yaml | grep mode`.
+This cluster was bootstrapped with `kubeadm init --skip-phases=addon/kube-proxy`, so there is **no kube-proxy**. Cilium implements Services in eBPF instead (`kubeProxyReplacement=true`).
 
-### See the kube proxy pods
+### Confirm kube-proxy is absent
 ```
-kubectl get pods -n kube-system
+kubectl get ds -n kube-system kube-proxy
 ```
-### Inspect the kube-services chain
-```
-sudo iptables -t nat -L KUBE-SERVICES -n --line-numbers
+Expected: `Error from server (NotFound)`.
 
+```
+cilium status | grep KubeProxyReplacement
+```
+
+### There is no KUBE-SERVICES chain
+With kube-proxy this is where Service rules lived. With Cilium it is empty/absent:
+```
+sudo iptables -t nat -L KUBE-SERVICES -n 2>&1 | head -3
 ```
 
 ### Create the pod and service
-As soon as the service is created, kube-proxy will create the iptables rules
-Add label if needed for the multi container po that was created in the CNI demo. 
-`kubectl label pod shared-namespace app=shared`
-
+Add a label if needed for the multi container pod that was created in the CNI demo.
 ```
-sudo iptables -t nat -L KUBE-SERVICES -n --line-numbers | grep 10.96.0.100
-
-```
-### See rules inside specific chain
-
-```
-sudo iptables -t nat -L KUBE-SVC-2JWKBRQZFJKXWXF4 -n --line-numbers
-
-```
-### digging deeper into the backend pod chain
-```
- sudo iptables -t nat -S KUBE-SEP-XXXXXXXX
-
+kubectl label pod shared-namespace app=shared
+kubectl apply -f multi-pod-service.yaml
 ```
 
+### See the Service in Cilium's eBPF load balancer
+As soon as the Service is created, every Cilium agent programs it into a BPF map.
+```
+kubectl -n kube-system exec ds/cilium -- cilium-dbg service list
+kubectl -n kube-system exec ds/cilium -- cilium-dbg bpf lb list
+```
+Find the `shared-service` ClusterIP and its backend pod IP(s).
+
+### Watch the traffic with Hubble
+```
+cilium hubble port-forward &
+hubble observe --to-service default/shared-service
+```
