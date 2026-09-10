@@ -9,9 +9,10 @@ kubectl label pod nginx2 run=nginx --overwrite
 
 kubectl expose pod nginx --port 80 --dry-run=client -oyaml
 kubectl expose pod nginx --port 80  
-kubectl get ep
+kubectl get endpointslices
 
 ```
+Note: the `Endpoints` API (`kubectl get ep`) is deprecated since Kubernetes 1.33; EndpointSlices are the replacement.
 
 ## Headless Service
 ```
@@ -52,8 +53,9 @@ Check the pod logs to see if the connection was successful
 
 
 ## Ingres controller
+> **Note:** the ingress-nginx project was retired and archived in March 2026 — `controller-v1.15.1` is its final release and it receives no further security fixes. It still works for this demo, but for anything real use Gateway API instead (see `manifests/` for the kgateway-based setup).
 ```
-kubectl apply -f https://raw.githubusercontent.com/kubernetes/ingress-nginx/controller-v1.9.4/deploy/static/provider/cloud/deploy.yaml
+kubectl apply -f https://raw.githubusercontent.com/kubernetes/ingress-nginx/controller-v1.15.1/deploy/static/provider/cloud/deploy.yaml
 ```
 Deploy all in Ingress folder after creating below config map 
 

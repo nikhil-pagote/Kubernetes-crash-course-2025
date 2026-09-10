@@ -1,5 +1,7 @@
 ## Kube-Proxy
 
+> **Note:** kube-proxy still defaults to `iptables` mode in Kubernetes 1.37 (it logs a warning when the mode isn't set explicitly). `nftables` mode becomes the default in 1.40, at which point these `iptables` commands would need to be replaced with `nft list ruleset`. Check the mode in use with `kubectl -n kube-system get cm kube-proxy -o yaml | grep mode`.
+
 ### See the kube proxy pods
 ```
 kubectl get pods -n kube-system

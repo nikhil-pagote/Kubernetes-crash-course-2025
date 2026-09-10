@@ -14,7 +14,7 @@ rules:
 - apiGroups: [""]
   resources: ["services","endpoints","pods"]
   verbs: ["get","watch","list"]
-- apiGroups: ["extensions","networking.k8s.io"]
+- apiGroups: ["networking.k8s.io"]
   resources: ["ingresses"]
   verbs: ["get","watch","list"]
 - apiGroups: [""]
@@ -55,14 +55,14 @@ spec:
       serviceAccountName: external-dns
       containers:
       - name: external-dns
-        image: registry.k8s.io/external-dns/external-dns:v0.14.1
+        image: registry.k8s.io/external-dns/external-dns:v0.22.0
         args:
         - --source=service
         - --source=ingress
         - --provider=exoscale
         - --domain-filter=saiyampathak.com
         - --policy=sync
-        - --exoscale-apikey=EXO3a312c2960515ffda95c32a4
-        - --exoscale-apisecret=5xAagBuZxz1mH6bdT2QAmyM2XPQ1D9WTuQB9xOASsH0
+        - --exoscale-apikey=<EXOSCALE_API_KEY>
+        - --exoscale-apisecret=<EXOSCALE_API_SECRET>
         - --exoscale-apienv=api
         - --exoscale-apizone=de-fra-1

@@ -50,7 +50,7 @@ CNPG Install
 
 ```
 kubectl apply --server-side -f \
-  https://raw.githubusercontent.com/cloudnative-pg/cloudnative-pg/release-1.25/releases/cnpg-1.25.2.yaml
+  https://raw.githubusercontent.com/cloudnative-pg/cloudnative-pg/release-1.30/releases/cnpg-1.30.0.yaml
 ```
 
 Initial config map
@@ -74,7 +74,7 @@ kubectl apply -f pgcluster.yaml
    - Create `Gateway`, `CertificateIssuer`, and `HTTPRoute`
 Cert Manager 
 ```
-kubectl apply -f https://github.com/cert-manager/cert-manager/releases/download/v1.18.0/cert-manager.yaml
+kubectl apply -f https://github.com/cert-manager/cert-manager/releases/download/v1.21.1/cert-manager.yaml
 ```
 Edit deployment and add enable gateway API 
 
@@ -88,11 +88,11 @@ kubectl rollout restart deployment cert-manager -n cert-manager
 ```
 Install kgateway 
 ```
-kubectl apply -f https://github.com/kubernetes-sigs/gateway-api/releases/download/v1.2.1/standard-install.yaml
+kubectl apply -f https://github.com/kubernetes-sigs/gateway-api/releases/download/v1.6.1/standard-install.yaml
 
-helm upgrade -i --create-namespace --namespace kgateway-system --version v2.0.1 kgateway-crds oci://cr.kgateway.dev/kgateway-dev/charts/kgateway-crds
+helm upgrade -i --create-namespace --namespace kgateway-system --version v2.4.4 kgateway-crds oci://cr.kgateway.dev/kgateway-dev/charts/kgateway-crds
 
-helm upgrade -i --namespace kgateway-system --version v2.0.1 kgateway oci://cr.kgateway.dev/kgateway-dev/charts/kgateway
+helm upgrade -i --namespace kgateway-system --version v2.4.4 kgateway oci://cr.kgateway.dev/kgateway-dev/charts/kgateway
 
 ```
 Apply manifests 

@@ -14,11 +14,11 @@ spec:
       memory: 200Mi # min memory per Pod
   - type: Container
     default:
-      cpu: "100m" # default CPU request for any container
-      memory: 100Mi # default memory request for any container
-    defaultRequest:
       cpu: "100m" # default CPU limit for any container
       memory: 100Mi # default memory limit for any container
+    defaultRequest:
+      cpu: "100m" # default CPU request for any container
+      memory: 100Mi # default memory request for any container
     max:
       cpu: "1" # max CPU per Container
       memory: 1Gi # max memory per Container

@@ -1,19 +1,19 @@
 #!/bin/bash
 set -e
 
-echo "Step 1: Install kubectl, kubeadm, and kubelet v1.33.0"
+echo "Step 1: Install kubectl, kubeadm, and kubelet v1.37.0"
 
 # Prepare keyrings
-sudo mkdir -p /etc/apt/keyrings
+sudo mkdir -p -m 755 /etc/apt/keyrings
 sudo apt-get install -y apt-transport-https ca-certificates curl gpg
 
 # Kubernetes repo
-curl -fsSL https://pkgs.k8s.io/core:/stable:/v1.33/deb/Release.key | sudo gpg --dearmor -o /etc/apt/keyrings/kubernetes-apt-keyring.gpg
-echo 'deb [signed-by=/etc/apt/keyrings/kubernetes-apt-keyring.gpg] https://pkgs.k8s.io/core:/stable:/v1.33/deb/ /' | sudo tee /etc/apt/sources.list.d/kubernetes.list
+curl -fsSL https://pkgs.k8s.io/core:/stable:/v1.37/deb/Release.key | sudo gpg --dearmor -o /etc/apt/keyrings/kubernetes-apt-keyring.gpg
+echo 'deb [signed-by=/etc/apt/keyrings/kubernetes-apt-keyring.gpg] https://pkgs.k8s.io/core:/stable:/v1.37/deb/ /' | sudo tee /etc/apt/sources.list.d/kubernetes.list
 
 # Update and install Kubernetes components
 sudo apt-get update -y
-sudo apt-get install -y kubelet=1.33.0-1.1 kubeadm=1.33.0-1.1 kubectl=1.33.0-1.1 vim git curl wget
+sudo apt-get install -y kubelet=1.37.0-1.1 kubeadm=1.37.0-1.1 kubectl=1.37.0-1.1 vim git curl wget
 sudo apt-mark hold kubelet kubeadm kubectl
 
 echo "Step 2: Swap Off and Kernel Modules Setup"
@@ -47,7 +47,7 @@ then
     echo "Containerd not found, installing..."
 
     # Add Docker repo key and repository
-    sudo mkdir -p /etc/apt/keyrings
+    sudo mkdir -p -m 755 /etc/apt/keyrings
     curl -fsSL https://download.docker.com/linux/ubuntu/gpg | sudo gpg --dearmor -o /etc/apt/keyrings/docker-archive-keyring.gpg
 
     echo \
@@ -81,13 +81,13 @@ sudo systemctl enable kubelet
 echo "Step 4: Pull Kubernetes images and init cluster"
 
 # Pull Kubernetes images
-sudo kubeadm config images pull --cri-socket unix:///run/containerd/containerd.sock --kubernetes-version v1.33.0
+sudo kubeadm config images pull --cri-socket unix:///run/containerd/containerd.sock --kubernetes-version v1.37.0
 
 # Initialize cluster
 sudo kubeadm init \
   --pod-network-cidr=10.244.0.0/16 \
   --upload-certs \
-  --kubernetes-version=v1.33.0 \
+  --kubernetes-version=v1.37.0 \
   --control-plane-endpoint="$(hostname)" \
   --ignore-preflight-errors=all \
   --cri-socket unix:///run/containerd/containerd.sock
@@ -101,7 +101,7 @@ export KUBECONFIG=$HOME/.kube/config
 echo "Step 5: Apply Flannel Network"
 
 # Apply Flannel CNI
-kubectl apply -f https://github.com/coreos/flannel/raw/master/Documentation/kube-flannel.yml
+kubectl apply -f https://github.com/flannel-io/flannel/releases/download/v0.28.9/kube-flannel.yml
 
 # Remove control-plane taint so pods can be scheduled
 kubectl taint nodes $(hostname) node-role.kubernetes.io/control-plane:NoSchedule-
