@@ -9,14 +9,26 @@
 - WireGuard kernel module on the host: `sudo modprobe wireguard`. kind nodes are containers, so they share your machine's kernel and cannot load modules themselves; the Cilium agent's `encryption.type=wireguard` needs the module already present (`lsmod | grep wireguard`). Skip this if you drop the two `encryption.*` values.
 
 #### Podman must be rootful
-Cilium mounts the BPF filesystem and loads eBPF programs into the host kernel. A rootless container is not allowed to do that, so with rootless Podman the `cilium` agent pods stay in `Init:CrashLoopBackOff` and the `mount-bpf-fs` init container logs `mount: /sys/fs/bpf: permission denied`. Run kind as root so the node containers are rootful:
-```
-sudo KIND_EXPERIMENTAL_PROVIDER=podman kind create cluster --config kind-config.yaml --kubeconfig ~/.kube/config
-sudo chown $USER ~/.kube/config
-```
-`--kubeconfig` writes the credentials to your own kubeconfig instead of root's, so `kubectl`, `cilium` and `hubble` work without sudo. Only `kind` itself needs `sudo KIND_EXPERIMENTAL_PROVIDER=podman` from then on (`kind get clusters`, `kind delete cluster`, ...), because the cluster lives in root's Podman.
+Cilium mounts the BPF filesystem and loads eBPF programs into the host kernel. A rootless container is not allowed to do that, so with rootless Podman the `cilium` agent pods stay in `Init:CrashLoopBackOff` and the `mount-bpf-fs` init container logs `mount: /sys/fs/bpf: permission denied`. Run kind as root so the node containers are rootful. One-time setup:
 
-With Docker none of this applies — its daemon is already rootful.
+1. Create the Podman network kind will use, so its bridge interface exists:
+   ```
+   sudo podman network create kind
+   sudo podman network inspect kind --format '{{.NetworkInterface}}'   # prints e.g. podman1
+   ```
+2. If a host firewall is active (`sudo ufw status`), allow traffic arriving on that bridge. Without this the worker nodes cannot resolve the control plane's name — Podman's DNS (aardvark-dns) listens on the bridge gateway, and the firewall silently drops the queries, so `kind create cluster` fails at "Joining worker nodes" with `lookup cilium-lab-control-plane ... i/o timeout`:
+   ```
+   sudo ufw allow in on podman1
+   ```
+   The rule only accepts packets from your own containers on that bridge; it opens nothing to the LAN. Remove it later with `sudo ufw delete allow in on podman1`.
+3. Create the cluster as root, but keep the credentials in your own kubeconfig:
+   ```
+   sudo KIND_EXPERIMENTAL_PROVIDER=podman kind create cluster --config kind-config.yaml --kubeconfig ~/.kube/config
+   sudo chown $USER ~/.kube/config
+   ```
+   Only `kind` needs `sudo KIND_EXPERIMENTAL_PROVIDER=podman` from then on (`kind get clusters`, `kind delete cluster`, ...) because the cluster lives in root's Podman; `kubectl`, `cilium` and `hubble` work without sudo.
+
+With Docker none of this applies — its daemon is already rootful and manages its own firewall rules.
 
 ### Create the cluster
 ```
