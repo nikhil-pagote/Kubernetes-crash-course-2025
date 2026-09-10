@@ -17,7 +17,7 @@
 {
   apiVersion: "kind.x-k8s.io/v1alpha4",
   kind: "Cluster",
-  name: "crash-course",
+  name: "cilium-lab",
   networking: {
     disableDefaultCNI: true,
     kubeProxyMode: "none",
