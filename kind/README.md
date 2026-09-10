@@ -3,13 +3,24 @@
 `Module1/demo.sh` builds a real single-node cluster on a VM. For a multi-node cluster on your laptop use kind: every node is a container running kubeadm-bootstrapped Kubernetes 1.37.0.
 
 ### Prerequisites
-- Docker (or Podman: `export KIND_EXPERIMENTAL_PROVIDER=podman`)
-- kind v0.33.0 — https://kind.sigs.k8s.io/docs/user/quick-start/#installation
-- `kubectl`, `cilium` and `hubble` CLIs (`Module1/demo.sh` Steps 1 and 5 show how)
+- Docker, or **rootful** Podman (see below)
+- kind v0.33.0 — https://kind.sigs.k8s.io/docs/user/quick-start/#installation (Arch: `sudo pacman -S kind`)
+- `kubectl`, `cilium` and `hubble` CLIs (`Module1/demo.sh` Steps 1 and 5 show how; Arch: `sudo pacman -S kubectl cilium-cli`)
+- WireGuard kernel module on the host: `sudo modprobe wireguard`
+
+#### Podman must be rootful
+Cilium mounts the BPF filesystem and loads eBPF programs into the host kernel. A rootless container is not allowed to do that, so with rootless Podman the `cilium` agent pods stay in `Init:CrashLoopBackOff` and the `mount-bpf-fs` init container logs `mount: /sys/fs/bpf: permission denied`. Run kind as root so the node containers are rootful:
+```
+sudo KIND_EXPERIMENTAL_PROVIDER=podman kind create cluster --config kind-config.yaml --kubeconfig ~/.kube/config
+sudo chown $USER ~/.kube/config
+```
+`--kubeconfig` writes the credentials to your own kubeconfig instead of root's, so `kubectl`, `cilium` and `hubble` work without sudo. Only `kind` itself needs `sudo KIND_EXPERIMENTAL_PROVIDER=podman` from then on (`kind get clusters`, `kind delete cluster`, ...), because the cluster lives in root's Podman.
+
+With Docker none of this applies — its daemon is already rootful.
 
 ### Create the cluster
 ```
-kind create cluster --config kind-config.yaml
+kind create cluster --config kind-config.yaml        # Docker
 kubectl get nodes
 ```
 All three nodes are `NotReady`: the config disables kind's default CNI and kube-proxy, so — exactly like the VM after `kubeadm init` — there is no pod network yet.
@@ -48,5 +59,6 @@ Nodes turn `Ready` as soon as the Cilium agent runs on them. No taint removal is
 
 ### Delete the cluster
 ```
-kind delete cluster --name cilium-lab
+kind delete cluster --name cilium-lab                                    # Docker
+sudo KIND_EXPERIMENTAL_PROVIDER=podman kind delete cluster --name cilium-lab   # rootful Podman
 ```
