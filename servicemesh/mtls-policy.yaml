@@ -1,0 +1,22 @@
+apiVersion: cilium.io/v2
+kind: CiliumNetworkPolicy
+metadata:
+  name: nginx-mtls
+spec:
+  endpointSelector:
+    matchLabels:
+      app: nginx
+  ingress:
+  - fromEndpoints:
+    - matchLabels:
+        app: client
+    authentication:
+      mode: required
+    toPorts:
+    - ports:
+      - port: "80"
+        protocol: TCP
+      rules:
+        http:
+        - method: GET
+          path: /
