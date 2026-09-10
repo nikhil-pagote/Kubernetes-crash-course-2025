@@ -9,15 +9,21 @@ openssl req -new -key saiyam.key -out saiyam.csr -subj "/CN=saiyam/O=group1"
 cat saiyam.csr | base64 | tr -d '\n'
 
 ```
-apiVersion: certificates.k8s.io/v1
-kind: CertificateSigningRequest
-metadata:
-  name: saiyam
-spec:
-  request: BASE64_CSR
-  signerName: kubernetes.io/kube-apiserver-client
-  usages:
-  - client auth
+---
+{
+  apiVersion: "certificates.k8s.io/v1",
+  kind: "CertificateSigningRequest",
+  metadata: {
+    name: "saiyam",
+  },
+  spec: {
+    request: "BASE64_CSR",
+    signerName: "kubernetes.io/kube-apiserver-client",
+    usages: [
+      "client auth",
+    ],
+  },
+}
 ```
 Note - change the BASE64_CSR with output of above command.
 
@@ -31,29 +37,47 @@ kubectl get csr saiyam -o jsonpath='{.status.certificate}' | base64 --decode > s
 
 ## Create Role and role binding
 ```
-kind: Role
-apiVersion: rbac.authorization.k8s.io/v1
-metadata:
-  namespace: default
-  name: pod-reader
-rules:
-- apiGroups: [""]
-  resources: ["pods"]
-  verbs: ["get", "watch", "list"]
 ---
-kind: RoleBinding
-apiVersion: rbac.authorization.k8s.io/v1
-metadata:
-  name: read-pods
-  namespace: default
-subjects:
-- kind: User
-  name: saiyam
-  apiGroup: rbac.authorization.k8s.io
-roleRef:
-  kind: Role
-  name: pod-reader
-  apiGroup: rbac.authorization.k8s.io
+{
+  apiVersion: "rbac.authorization.k8s.io/v1",
+  kind: "Role",
+  metadata: {
+    name: "pod-reader",
+    namespace: "default",
+  },
+  rules: [{
+    apiGroups: [
+      "",
+    ],
+    resources: [
+      "pods",
+    ],
+    verbs: [
+      "get",
+      "watch",
+      "list",
+    ],
+  }],
+}
+---
+{
+  apiVersion: "rbac.authorization.k8s.io/v1",
+  kind: "RoleBinding",
+  metadata: {
+    name: "read-pods",
+    namespace: "default",
+  },
+  roleRef: {
+    apiGroup: "rbac.authorization.k8s.io",
+    kind: "Role",
+    name: "pod-reader",
+  },
+  subjects: [{
+    apiGroup: "rbac.authorization.k8s.io",
+    kind: "User",
+    name: "saiyam",
+  }],
+}
 ```
 ### setup kubeconfig
 ```

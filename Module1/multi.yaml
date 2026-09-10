@@ -1,11 +1,26 @@
-apiVersion: v1
-kind: Pod
-metadata:
-  name: shared-namespace
-spec:
-  containers:
-    - name: p1
-      image: busybox
-      command: ['/bin/sh', '-c', 'sleep 10000']
-    - name: p2
-      image: nginx
+# KYAML: the strict YAML subset kubectl emits with `-o kyaml` (Kubernetes 1.34+).
+# Braces and brackets make structure explicit, every string is quoted, and
+# indentation can never silently change meaning. It is still valid YAML, so
+# `kubectl apply -f` reads it unchanged.
+---
+{
+  apiVersion: "v1",
+  kind: "Pod",
+  metadata: {
+    name: "shared-namespace",
+  },
+  spec: {
+    containers: [{
+      command: [
+        "/bin/sh",
+        "-c",
+        "sleep 10000",
+      ],
+      image: "busybox",
+      name: "p1",
+    }, {
+      image: "nginx",
+      name: "p2",
+    }],
+  },
+}
