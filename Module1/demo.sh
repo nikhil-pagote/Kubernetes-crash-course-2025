@@ -83,12 +83,13 @@ echo "Step 4: Pull Kubernetes images and init cluster"
 # Pull Kubernetes images
 sudo kubeadm config images pull --cri-socket unix:///run/containerd/containerd.sock --kubernetes-version v1.37.0
 
-# Initialize cluster
+# Initialize cluster (kube-proxy is skipped: Cilium replaces it)
 sudo kubeadm init \
   --pod-network-cidr=10.244.0.0/16 \
   --upload-certs \
   --kubernetes-version=v1.37.0 \
   --control-plane-endpoint="$(hostname)" \
+  --skip-phases=addon/kube-proxy \
   --ignore-preflight-errors=all \
   --cri-socket unix:///run/containerd/containerd.sock
 
@@ -98,12 +99,45 @@ sudo cp -i /etc/kubernetes/admin.conf $HOME/.kube/config
 sudo chown $(id -u):$(id -g) $HOME/.kube/config
 export KUBECONFIG=$HOME/.kube/config
 
-echo "Step 5: Apply Flannel Network"
+echo "Step 5: Install Cilium (CNI + kube-proxy replacement + service mesh)"
 
-# Apply Flannel CNI
-kubectl apply -f https://github.com/flannel-io/flannel/releases/download/v0.28.9/kube-flannel.yml
+# Gateway API CRDs (Cilium 1.20 requires v1.6.1)
+kubectl apply -f https://github.com/kubernetes-sigs/gateway-api/releases/download/v1.6.1/standard-install.yaml
 
-# Remove control-plane taint so pods can be scheduled
+# cilium CLI
+CILIUM_CLI_VERSION=v0.20.0
+curl -L --fail --remote-name-all https://github.com/cilium/cilium-cli/releases/download/${CILIUM_CLI_VERSION}/cilium-linux-amd64.tar.gz{,.sha256sum}
+sha256sum --check cilium-linux-amd64.tar.gz.sha256sum
+sudo tar xzvfC cilium-linux-amd64.tar.gz /usr/local/bin
+rm cilium-linux-amd64.tar.gz{,.sha256sum}
+
+# hubble CLI
+HUBBLE_VERSION=v1.19.4
+curl -L --fail --remote-name-all https://github.com/cilium/hubble/releases/download/${HUBBLE_VERSION}/hubble-linux-amd64.tar.gz{,.sha256sum}
+sha256sum --check hubble-linux-amd64.tar.gz.sha256sum
+sudo tar xzvfC hubble-linux-amd64.tar.gz /usr/local/bin
+rm hubble-linux-amd64.tar.gz{,.sha256sum}
+
+# Install Cilium. Without kube-proxy, Cilium needs the API server address explicitly.
+API_SERVER_IP=$(hostname -I | awk '{print $1}')
+cilium install --version 1.20.1 \
+  --set kubeProxyReplacement=true \
+  --set k8sServiceHost=${API_SERVER_IP} \
+  --set k8sServicePort=6443 \
+  --set ipam.mode=kubernetes \
+  --set hubble.relay.enabled=true \
+  --set hubble.ui.enabled=true \
+  --set gatewayAPI.enabled=true \
+  --set encryption.enabled=true \
+  --set encryption.type=wireguard \
+  --set authentication.enabled=true \
+  --set authentication.mutual.spire.enabled=true \
+  --set authentication.mutual.spire.install.enabled=true
+
+# Remove control-plane taint so pods can be scheduled (Hubble relay/UI and
+# SPIRE server are regular Deployments and need a schedulable node)
 kubectl taint nodes $(hostname) node-role.kubernetes.io/control-plane:NoSchedule-
+
+cilium status --wait
 
 echo "Kubernetes cluster setup is complete!"
