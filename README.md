@@ -126,6 +126,7 @@ Each folder corresponds to a major topic covered in the course:
 - `servicemesh`: Cilium service mesh demos (L7 policy, mTLS, Gateway API, Hubble)
 - `services`, `deployments`, `manifests`: Resource definitions
 - `Module1`: Intro module to Kubernetes
+- `kind`: local 3-node kind cluster config and test manifests
 - `init.sql`: Database initialization
 
 ---

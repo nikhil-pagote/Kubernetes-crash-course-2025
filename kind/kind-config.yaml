@@ -1,0 +1,36 @@
+# kind (Kubernetes IN Docker) config for a local 3-node cluster: one control
+# plane and two workers, each a container sharing your machine's kernel.
+# It replaces Steps 1-4 of Module1/demo.sh; Cilium is still installed by hand
+# afterwards (see README.md), so the two networking settings below matter:
+#
+#   disableDefaultCNI  - do not install kindnet; the nodes stay NotReady until
+#                        Cilium is installed, exactly like a fresh kubeadm node.
+#   kubeProxyMode      - "none" = no kube-proxy DaemonSet, same as
+#                        `kubeadm init --skip-phases=addon/kube-proxy`.
+#
+# The node image is pinned by digest: kind requires that the image was built
+# for the kind release you run (v0.33.0 here). When you upgrade kind, take the
+# new digest from its release notes.
+#
+# Written in KYAML (kubectl -o kyaml style); kind reads it as ordinary YAML.
+---
+{
+  apiVersion: "kind.x-k8s.io/v1alpha4",
+  kind: "Cluster",
+  name: "crash-course",
+  networking: {
+    disableDefaultCNI: true,
+    kubeProxyMode: "none",
+    podSubnet: "10.244.0.0/16",
+  },
+  nodes: [{
+    role: "control-plane",
+    image: "kindest/node:v1.37.0@sha256:a1ed56cfb0e7b93589bdf97c8cd566405a265939e3620fc4f5de89adff580ae5",
+  }, {
+    role: "worker",
+    image: "kindest/node:v1.37.0@sha256:a1ed56cfb0e7b93589bdf97c8cd566405a265939e3620fc4f5de89adff580ae5",
+  }, {
+    role: "worker",
+    image: "kindest/node:v1.37.0@sha256:a1ed56cfb0e7b93589bdf97c8cd566405a265939e3620fc4f5de89adff580ae5",
+  }],
+}
